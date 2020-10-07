@@ -4,6 +4,7 @@ from splinter import Browser
 import pandas as pd
 import re
 import datetime as dt
+import time
 
 
 #################################################
@@ -45,6 +46,7 @@ def mars_news(browser):
 
 # NASA JPL (Jet Propulsion Laboratory) Site Web Scraper
 def featured_image(browser):
+    time.sleep(10)
     # Visit the NASA JPL (Jet Propulsion Laboratory) Site
     url = "https://www.jpl.nasa.gov/spaceimages/?search=&category=Mars"
     browser.visit(url)
@@ -54,42 +56,44 @@ def featured_image(browser):
     browser.click_link_by_partial_text("FULL IMAGE")
 
     # Find "More Info" Button and Click It
+    time.sleep(5)
     browser.is_element_present_by_text("more info", wait_time=1)
     more_info_element = browser.find_link_by_partial_text("more info")
+    time.sleep(5)
     more_info_element.click()
 
     # Parse Results HTML with BeautifulSoup
     html = browser.html
     image_soup = BeautifulSoup(html, "html.parser")
+    time.sleep(5)
+    img = image_soup.select_one("figure.lede a img").get("src")
+    time.sleep(5)
 
-    img = image_soup.select_one("figure.lede a img")
-    try:
-        img_url = img.get("src")
-    except AttributeError:
-        return None 
-   # Use Base URL to Create Absolute URL
-    img_url = f"https://www.jpl.nasa.gov{img_url}"
+    img_url = f"https://www.jpl.nasa.gov{img}"
     return img_url
 
 
+
 # Mars Weather Twitter Account Web Scraper
-def twitter_weather(browser):
-    # Visit the Mars Weather Twitter Account
-    url = "https://twitter.com/marswxreport?lang=en"
-    browser.visit(url)
+# Commented out as Twitter was giving server errors every time. 
+# def twitter_weather(browser):
+#     # Visit the Mars Weather Twitter Account
+#     url = "https://twitter.com/marswxreport?lang=en"
+#     browser.visit(url)
     
-    # Parse Results HTML with BeautifulSoup
-    html = browser.html
-    weather_soup = BeautifulSoup(html, "html.parser")
+#     # Parse Results HTML with BeautifulSoup
+#     html = browser.html
+#     weather_soup = BeautifulSoup(html, "html.parser")
     
-    # Find a Tweet with the data-name `Mars Weather`
-    mars_weather = weather_soup.find_all("span",text=re.compile('InSight sol')).text
-    return mars_weather
+#     # Find a Tweet with the data-name `Mars Weather`
+#     mars_weather = weather_soup.find_all("span",text=re.compile('InSight sol')).text
+#     return mars_weather
 
 
 # Mars Facts Web Scraper
 def mars_facts():
     # Visit the Mars Facts Site Using Pandas to Read
+    time.sleep(5)
     try:
         mars_df = pd.read_html("https://space-facts.com/mars/")[0]
     except BaseException:
@@ -101,12 +105,14 @@ def mars_facts():
 # Mars Hemispheres Web Scraper
 def hemisphere(browser):
     # Visit the USGS Astrogeology Science Center Site
+    time.sleep(5)
     url = "https://astrogeology.usgs.gov/search/results?q=hemisphere+enhanced&k1=target&v1=Mars"
     browser.visit(url)
 
     hemisphere_image_urls = []
 
     # Get a List of All the Hemisphere
+    time.sleep(5)
     links = browser.find_by_css("a.product-item h3")
     for item in range(len(links)):
         hemisphere = {}
@@ -115,6 +121,7 @@ def hemisphere(browser):
         browser.find_by_css("a.product-item h3")[item].click()
         
         # Find Sample Image Anchor Tag & Extract <href>
+        time.sleep(5)
         sample_element = browser.find_link_by_text("Sample").first
         hemisphere["img_url"] = sample_element["href"]
         
@@ -125,6 +132,7 @@ def hemisphere(browser):
         hemisphere_image_urls.append(hemisphere)
         
         # Navigate Backwards
+        time.sleep(5)
         browser.back()
     return hemisphere_image_urls
 
@@ -136,7 +144,7 @@ def scrape_all():
     browser = Browser("chrome", **executable_path, headless=False)
     news_title, news_paragraph = mars_news(browser)
     img_url = featured_image(browser)
-    mars_weather = twitter_weather(browser)
+    # mars_weather = twitter_weather(browser)
     facts = mars_facts()
     hemisphere_image_urls = hemisphere(browser)
     timestamp = dt.datetime.now()
@@ -145,7 +153,7 @@ def scrape_all():
         "news_title": news_title,
         "news_paragraph": news_paragraph,
         "featured_image": img_url,
-        "weather": mars_weather,
+        # "weather": mars_weather,
         "facts": facts,
         "hemispheres": hemisphere_image_urls,
         "last_modified": timestamp
